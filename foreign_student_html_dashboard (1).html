@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外籍學生樞紐分析儀表板</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .control-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .filter-section {
+            margin-top: 20px;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        
+        .stats-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .chart-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        .data-table {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #34495e;
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        tr:hover {
+            background-color: #e8f4f8;
+        }
+        
+        .numeric {
+            text-align: right;
+        }
+        
+        .button-group {
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #7f8c8d;
+        }
+        
+        .error {
+            background-color: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>外籍學生樞紐分析儀表板</h1>
+            <p>113學年度大專校院外國學生統計分析</p>
+        </div>
+        
+        <!-- 文件上傳區域 -->
+        <div id="uploadSection" class="control-panel">
+            <h2>📁 匯入Excel文件</h2>
+            <div style="margin-bottom: 20px;">
+                <p style="color: #7f8c8d; margin-bottom: 15px;">
+                    請上傳包含外籍學生數據的Excel文件（支援.xlsx和.xls格式）
+                </p>
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" 
+                           style="padding: 10px; border: 2px dashed #3498db; border-radius: 5px; 
+                                  background: #f8f9fa; cursor: pointer; min-width: 250px;">
+                    <button id="uploadBtn" class="btn btn-primary" onclick="handleFileUpload()" disabled>
+                        📊 分析數據
+                    </button>
+                    <button id="demoBtn" class="btn btn-secondary" onclick="loadDemoData()">
+                        🔧 使用示範數據
+                    </button>
+                </div>
+            </div>
+            
+            <div id="fileInfo" style="display: none; background: #e8f5e9; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                <h4 style="color: #2e7d32; margin-bottom: 10px;">✅ 文件資訊</h4>
+                <div id="fileDetails"></div>
+            </div>
+            
+            <div style="background: #f0f7ff; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 4px solid #3498db;">
+                <h4 style="color: #2c3e50; margin-bottom: 10px;">💡 支援的文件格式</h4>
+                <ul style="color: #5a6c7d; margin-left: 20px;">
+                    <li>Excel 2007以後版本 (.xlsx)</li>
+                    <li>Excel 97-2003版本 (.xls)</li>
+                    <li>文件應包含學校、國家、學位別等外籍學生統計數據</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <div>🔄 正在處理數據...</div>
+            <div style="font-size: 0.9em; color: #95a5a6; margin-top: 10px;">請稍候，正在解析Excel文件</div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="dashboard" style="display: none;">
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <h2>控制面板</h2>
+                <div class="control-row">
+                    <div class="form-group">
+                        <label for="viewMode">分析維度</label>
+                        <select id="viewMode">
+                            <option value="school">按學校分析</option>
+                            <option value="country">按國家分析</option>
+                            <option value="degree">按學位別分析</option>
+                        </select>
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;">
+                            💡 在學校分析模式下，點擊圖表中的學校可查看詳細分析
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chartType">圖表類型</label>
+                        <select id="chartType">
+                            <option value="bar">長條圖</option>
+                            <option value="pie">圓餅圖</option>
+                            <option value="doughnut">環狀圖</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dataType">顯示數據</label>
+                        <select id="dataType">
+                            <option value="total">總人數</option>
+                            <option value="doctoral">博士班</option>
+                            <option value="master">碩士班</option>
+                            <option value="bachelor">學士班</option>
+                            <option value="diploma">專科</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="schoolFilter" class="filter-section">
+                    <label>選擇學校 (已選 <span id="schoolCount">0</span> 所)</label>
+                    <div id="schoolList" class="filter-grid"></div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="selectTopSchools()">選擇前10名學校</button>
+                        <button class="btn btn-secondary" onclick="clearSchoolSelection()">清除學校選擇</button>
+                    </div>
+                </div>
+                
+                <div id="countryFilter" class="filter-section">
+                    <label>選擇國家 (已選 <span id="countryCount">0</span> 個)</label>
+                    <div id="countryList" class="filter-grid"></div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="selectTopCountries()">選擇前10名國家</button>
+                        <button class="btn btn-secondary" onclick="clearCountrySelection()">清除國家選擇</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 統計摘要 -->
+            <div class="stats-panel">
+                <h2>統計摘要</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalStudents">0</div>
+                        <div class="stat-label">總學生數</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalSchools">0</div>
+                        <div class="stat-label">學校數</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalCountries">0</div>
+                        <div class="stat-label">國家數</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="femaleRatio">0%</div>
+                        <div class="stat-label">女性比例</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 圖表區域 -->
+            <div class="chart-panel">
+                <h2 id="chartTitle">各學校外籍學生人數</h2>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 學校詳細分析 -->
+            <div id="schoolDetailPanel" class="chart-panel" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 id="schoolDetailTitle">學校詳細分析</h2>
+                    <button class="btn btn-secondary" onclick="closeSchoolDetail()">✕ 關閉</button>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #3498db;" id="schoolTotalStudents">0</div>
+                            <div style="color: #7f8c8d; font-size: 0.9em;">總學生數</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #e74c3c;" id="schoolCountryCount">0</div>
+                            <div style="color: #7f8c8d; font-size: 0.9em;">來源國家</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #f39c12;" id="schoolMaleRatio">0%</div>
+                            <div style="color: #7f8c8d; font-size: 0.9em;">男性比例</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #9b59b6;" id="schoolFemaleRatio">0%</div>
+                            <div style="color: #7f8c8d; font-size: 0.9em;">女性比例</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">🌍 各國學生分布</h3>
+                        <div style="position: relative; height: 350px;">
+                            <canvas id="schoolCountryChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">🎓 學位分布</h3>
+                        <div style="position: relative; height: 350px;">
+                            <canvas id="schoolDegreeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">📊 詳細數據表</h3>
+                    <div style="overflow-x: auto;">
+                        <table id="schoolDetailTable" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #34495e; color: white;">
+                                    <th style="padding: 12px; text-align: left;">國家</th>
+                                    <th style="padding: 12px; text-align: right;">總計</th>
+                                    <th style="padding: 12px; text-align: right;">男性</th>
+                                    <th style="padding: 12px; text-align: right;">女性</th>
+                                    <th style="padding: 12px; text-align: right;">博士班</th>
+                                    <th style="padding: 12px; text-align: right;">碩士班</th>
+                                    <th style="padding: 12px; text-align: right;">學士班</th>
+                                    <th style="padding: 12px; text-align: right;">專科</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolDetailTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 數據表格 -->
+            <div class="data-table">
+                <h2>詳細數據</h2>
+                <div style="overflow-x: auto;">
+                    <table id="dataTable">
+                        <thead>
+                            <tr id="tableHeader"></tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [];
+        let processedData = [];
+        let currentChart = null;
+        let schoolCountryChart = null;
+        let schoolDegreeChart = null;
+        let selectedSchools = [];
+        let selectedCountries = [];
+        let uploadedFile = null;
+        
+        // 文件上傳處理
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadedFile = file;
+                    uploadBtn.disabled = false;
+                    
+                    // 顯示文件資訊
+                    document.getElementById('fileInfo').style.display = 'block';
+                    document.getElementById('fileDetails').innerHTML = `
+                        <p><strong>文件名稱：</strong>${file.name}</p>
+                        <p><strong>文件大小：</strong>${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p><strong>文件類型：</strong>${file.type || '未知'}</p>
+                        <p><strong>最後修改：</strong>${new Date(file.lastModified).toLocaleString()}</p>
+                    `;
+                } else {
+                    uploadBtn.disabled = true;
+                    document.getElementById('fileInfo').style.display = 'none';
+                }
+            });
+        });
+        
+        // 處理文件上傳
+        async function handleFileUpload() {
+            if (!uploadedFile) {
+                alert('請先選擇要上傳的Excel文件');
+                return;
+            }
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                const arrayBuffer = await readFileAsArrayBuffer(uploadedFile);
+                await processExcelData(arrayBuffer);
+                initializeDashboard();
+                document.getElementById('uploadSection').style.display = 'none';
+            } catch (error) {
+                console.error('處理文件錯誤:', error);
+                showError('處理文件失敗：' + error.message + '\n\n請確認文件格式正確，並包含必要的數據欄位。');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // 讀取文件為ArrayBuffer
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(new Error('文件讀取失敗'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        // 處理Excel數據
+        async function processExcelData(arrayBuffer) {
+            const workbook = XLSX.read(arrayBuffer, {
+                cellStyles: true,
+                cellFormulas: true,
+                cellDates: true,
+                cellNF: true,
+                sheetStubs: true
+            });
+
+            // 嘗試找到包含數據的工作表
+            let worksheet = null;
+            let sheetName = null;
+            
+            // 優先查找名為 're04' 的工作表
+            if (workbook.SheetNames.includes('re04')) {
+                worksheet = workbook.Sheets['re04'];
+                sheetName = 're04';
+            } else {
+                // 如果沒有找到，使用第一個工作表
+                sheetName = workbook.SheetNames[0];
+                worksheet = workbook.Sheets[sheetName];
+            }
+            
+            if (!worksheet) {
+                throw new Error('無法找到有效的工作表');
+            }
+            
+            rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if (rawData.length === 0) {
+                throw new Error('工作表中沒有數據');
+            }
+
+            // 嘗試找到數據開始行
+            let dataStartRow = -1;
+            for (let i = 0; i < Math.min(rawData.length, 50); i++) {
+                if (rawData[i] && (
+                    rawData[i][0] === '總計' || 
+                    (typeof rawData[i][0] === 'string' && rawData[i][0].includes('總計'))
+                )) {
+                    dataStartRow = i;
+                    break;
+                }
+            }
+            
+            if (dataStartRow === -1) {
+                // 如果找不到"總計"行，嘗試其他模式
+                for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+                    if (rawData[i] && rawData[i].length > 10 && 
+                        rawData[i].some(cell => cell && typeof cell === 'string' && 
+                        (cell.includes('學校') || cell.includes('國家') || cell.includes('學生')))) {
+                        dataStartRow = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (dataStartRow === -1) {
+                throw new Error('無法識別數據格式。請確認Excel文件包含外籍學生統計數據。');
+            }
+
+            // 解析數據
+            processedData = [];
+            let currentSchool = null;
+            let currentSchoolCode = null;
+            let dataFound = false;
+
+            for (let i = dataStartRow + 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+
+                // 檢查是否為學校行（通常第二列有4位數字代碼）
+                if (row[1] && (
+                    row[1].toString().match(/^\d{4}$/) || 
+                    (typeof row[1] === 'number' && row[1] >= 1000 && row[1] <= 9999)
+                )) {
+                    currentSchoolCode = row[1].toString();
+                    currentSchool = row[2];
+                }
+
+                // 檢查是否為國家數據行
+                if (row[3] && currentSchool && row[4] && !isNaN(row[4]) && parseInt(row[4]) > 0) {
+                    const country = row[3].toString();
+                    const totalCount = parseInt(row[4]) || 0;
+                    const totalMale = parseInt(row[5]) || 0;
+                    const totalFemale = parseInt(row[6]) || 0;
+                    const docCount = parseInt(row[7]) || 0;
+                    const masterCount = parseInt(row[10]) || 0;
+                    const bachelorCount = parseInt(row[13]) || 0;
+                    const diplomaCount = parseInt(row[16]) || 0;
+
+                    processedData.push({
+                        schoolCode: currentSchoolCode,
+                        schoolName: currentSchool,
+                        country: country,
+                        totalCount: totalCount,
+                        totalMale: totalMale,
+                        totalFemale: totalFemale,
+                        doctoral: docCount,
+                        master: masterCount,
+                        bachelor: bachelorCount,
+                        diploma: diplomaCount
+                    });
+                    
+                    dataFound = true;
+                }
+            }
+            
+            if (!dataFound || processedData.length === 0) {
+                throw new Error('無法從文件中提取有效數據。請檢查文件格式是否正確。');
+            }
+            
+            console.log(`成功處理 ${processedData.length} 筆數據`);
+        }
+        
+        // 載入示範數據
+        async function loadDemoData() {
+            showLoading(true);
+            hideError();
+            
+            try {
+                // 嘗試使用原始方法載入數據
+                if (typeof window.fs !== 'undefined' && window.fs.readFile) {
+                    const response = await window.fs.readFile('113_1164 1.xlsx');
+                    await processExcelData(response);
+                } else {
+                    // 如果無法訪問文件系統，創建示範數據
+                    createDemoData();
+                }
+                
+                initializeDashboard();
+                document.getElementById('uploadSection').style.display = 'none';
+                
+            } catch (error) {
+                console.log('無法載入原始文件，使用示範數據');
+                createDemoData();
+                initializeDashboard();
+                document.getElementById('uploadSection').style.display = 'none';
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // 創建示範數據
+        function createDemoData() {
+            const schools = [
+                '國立政治大學', '國立清華大學', '國立臺灣大學', '國立臺灣師範大學', '國立成功大學',
+                '國立中興大學', '國立陽明交通大學', '國立中央大學', '國立中山大學', '國立臺灣海洋大學'
+            ];
+            
+            const countries = [
+                '越南', '印尼', '日本', '菲律賓', '馬來西亞', '印度', '泰國', '南韓', '蒙古', '巴基斯坦',
+                '美國', '德國', '法國', '英國', '澳洲', '加拿大', '新加坡', '香港', '中國大陸'
+            ];
+            
+            processedData = [];
+            
+            schools.forEach((school, schoolIndex) => {
+                const schoolCode = (schoolIndex + 1).toString().padStart(4, '0');
+                
+                countries.forEach(country => {
+                    if (Math.random() > 0.3) { // 70%的機率有該國學生
+                        const totalCount = Math.floor(Math.random() * 100) + 1;
+                        const maleRatio = 0.3 + Math.random() * 0.4; // 30%-70%
+                        const totalMale = Math.floor(totalCount * maleRatio);
+                        const totalFemale = totalCount - totalMale;
+                        
+                        // 隨機分配學位
+                        const doctoral = Math.floor(totalCount * (0.1 + Math.random() * 0.2));
+                        const master = Math.floor(totalCount * (0.3 + Math.random() * 0.3));
+                        const bachelor = totalCount - doctoral - master;
+                        const diploma = 0;
+                        
+                        processedData.push({
+                            schoolCode: schoolCode,
+                            schoolName: school,
+                            country: country,
+                            totalCount: totalCount,
+                            totalMale: totalMale,
+                            totalFemale: totalFemale,
+                            doctoral: doctoral,
+                            master: master,
+                            bachelor: bachelor,
+                            diploma: diploma
+                        });
+                    }
+                });
+            });
+            
+            console.log(`創建了 ${processedData.length} 筆示範數據`);
+        }
+        
+        // 顯示/隱藏載入狀態
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // 顯示錯誤
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // 隱藏錯誤
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        // 初始化儀表板
+        function initializeDashboard() {
+            document.getElementById('dashboard').style.display = 'block';
+            
+            // 設置事件監聽器
+            document.getElementById('viewMode').addEventListener('change', updateView);
+            document.getElementById('chartType').addEventListener('change', updateChart);
+            document.getElementById('dataType').addEventListener('change', updateChart);
+            
+            // 初始化篩選器
+            setupFilters();
+            
+            // 預設選擇前10名
+            selectTopSchools();
+            selectTopCountries();
+            
+            updateView();
+        }
+
+        // 設置篩選器
+        function setupFilters() {
+            const schools = [...new Set(processedData.map(d => d.schoolName))].filter(s => s).sort();
+            const countries = [...new Set(processedData.map(d => d.country))].filter(c => c).sort();
+            
+            // 學校篩選器
+            const schoolList = document.getElementById('schoolList');
+            schoolList.innerHTML = '';
+            schools.forEach(school => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = `
+                    <input type="checkbox" id="school_${school}" value="${school}" onchange="updateSchoolSelection()">
+                    <label for="school_${school}" title="${school}">${school.length > 15 ? school.substring(0, 15) + '...' : school}</label>
+                `;
+                schoolList.appendChild(div);
+            });
+            
+            // 國家篩選器
+            const countryList = document.getElementById('countryList');
+            countryList.innerHTML = '';
+            countries.forEach(country => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = `
+                    <input type="checkbox" id="country_${country}" value="${country}" onchange="updateCountrySelection()">
+                    <label for="country_${country}">${country}</label>
+                `;
+                countryList.appendChild(div);
+            });
+        }
+
+        // 更新學校選擇
+        function updateSchoolSelection() {
+            selectedSchools = Array.from(document.querySelectorAll('#schoolList input:checked')).map(cb => cb.value);
+            document.getElementById('schoolCount').textContent = selectedSchools.length;
+            updateChart();
+        }
+
+        // 更新國家選擇
+        function updateCountrySelection() {
+            selectedCountries = Array.from(document.querySelectorAll('#countryList input:checked')).map(cb => cb.value);
+            document.getElementById('countryCount').textContent = selectedCountries.length;
+            updateChart();
+        }
+
+        // 選擇前10名學校
+        function selectTopSchools() {
+            // 計算各學校總人數
+            const schoolStats = {};
+            processedData.forEach(record => {
+                if (!schoolStats[record.schoolName]) {
+                    schoolStats[record.schoolName] = 0;
+                }
+                schoolStats[record.schoolName] += record.totalCount;
+            });
+            
+            const topSchools = Object.entries(schoolStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([school]) => school);
+            
+            // 清除所有選擇
+            document.querySelectorAll('#schoolList input').forEach(cb => cb.checked = false);
+            
+            // 選擇前10名
+            topSchools.forEach(school => {
+                const checkbox = document.getElementById(`school_${school}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            updateSchoolSelection();
+        }
+
+        // 選擇前10名國家
+        function selectTopCountries() {
+            // 計算各國總人數
+            const countryStats = {};
+            processedData.forEach(record => {
+                if (!countryStats[record.country]) {
+                    countryStats[record.country] = 0;
+                }
+                countryStats[record.country] += record.totalCount;
+            });
+            
+            const topCountries = Object.entries(countryStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([country]) => country);
+            
+            // 清除所有選擇
+            document.querySelectorAll('#countryList input').forEach(cb => cb.checked = false);
+            
+            // 選擇前10名
+            topCountries.forEach(country => {
+                const checkbox = document.getElementById(`country_${country}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            updateCountrySelection();
+        }
+
+        // 清除學校選擇
+        function clearSchoolSelection() {
+            document.querySelectorAll('#schoolList input').forEach(cb => cb.checked = false);
+            updateSchoolSelection();
+        }
+
+        // 清除國家選擇
+        function clearCountrySelection() {
+            document.querySelectorAll('#countryList input').forEach(cb => cb.checked = false);
+            updateCountrySelection();
+        }
+
+        // 更新視圖
+        function updateView() {
+            const viewMode = document.getElementById('viewMode').value;
+            
+            // 顯示/隱藏篩選器
+            document.getElementById('schoolFilter').style.display = viewMode === 'degree' ? 'none' : 'block';
+            document.getElementById('countryFilter').style.display = viewMode === 'degree' ? 'none' : 'block';
+            
+            // 更新圖表標題
+            const titles = {
+                school: '各學校外籍學生人數',
+                country: '各國學生人數分布',
+                degree: '各學位別學生人數'
+            };
+            document.getElementById('chartTitle').textContent = titles[viewMode];
+            
+            updateChart();
+        }
+
+        // 更新圖表
+        function updateChart() {
+            const viewMode = document.getElementById('viewMode').value;
+            const chartType = document.getElementById('chartType').value;
+            const dataType = document.getElementById('dataType').value;
+            
+            // 過濾數據
+            const filteredData = processedData.filter(record => {
+                const schoolMatch = selectedSchools.length === 0 || selectedSchools.includes(record.schoolName);
+                const countryMatch = selectedCountries.length === 0 || selectedCountries.includes(record.country);
+                return schoolMatch && countryMatch;
+            });
+            
+            // 準備圖表數據
+            let chartData = prepareChartData(filteredData, viewMode, dataType);
+            
+            // 更新統計摘要
+            updateStats(filteredData);
+            
+            // 更新圖表
+            renderChart(chartData, chartType, dataType);
+            
+            // 更新表格
+            updateTable(chartData, viewMode);
+        }
+
+        // 準備圖表數據
+        function prepareChartData(data, viewMode, dataType) {
+            let aggregatedData = {};
+            
+            if (viewMode === 'school') {
+                data.forEach(record => {
+                    if (!aggregatedData[record.schoolName]) {
+                        aggregatedData[record.schoolName] = {
+                            name: record.schoolName,
+                            total: 0,
+                            doctoral: 0,
+                            master: 0,
+                            bachelor: 0,
+                            diploma: 0,
+                            male: 0,
+                            female: 0
+                        };
+                    }
+                    aggregatedData[record.schoolName].total += record.totalCount;
+                    aggregatedData[record.schoolName].doctoral += record.doctoral;
+                    aggregatedData[record.schoolName].master += record.master;
+                    aggregatedData[record.schoolName].bachelor += record.bachelor;
+                    aggregatedData[record.schoolName].diploma += record.diploma;
+                    aggregatedData[record.schoolName].male += record.totalMale;
+                    aggregatedData[record.schoolName].female += record.totalFemale;
+                });
+            } else if (viewMode === 'country') {
+                data.forEach(record => {
+                    if (!aggregatedData[record.country]) {
+                        aggregatedData[record.country] = {
+                            name: record.country,
+                            total: 0,
+                            doctoral: 0,
+                            master: 0,
+                            bachelor: 0,
+                            diploma: 0,
+                            male: 0,
+                            female: 0
+                        };
+                    }
+                    aggregatedData[record.country].total += record.totalCount;
+                    aggregatedData[record.country].doctoral += record.doctoral;
+                    aggregatedData[record.country].master += record.master;
+                    aggregatedData[record.country].bachelor += record.bachelor;
+                    aggregatedData[record.country].diploma += record.diploma;
+                    aggregatedData[record.country].male += record.totalMale;
+                    aggregatedData[record.country].female += record.totalFemale;
+                });
+            } else { // degree
+                aggregatedData = {
+                    博士班: { name: '博士班', total: 0, male: 0, female: 0 },
+                    碩士班: { name: '碩士班', total: 0, male: 0, female: 0 },
+                    學士班: { name: '學士班', total: 0, male: 0, female: 0 },
+                    專科: { name: '專科', total: 0, male: 0, female: 0 }
+                };
+                data.forEach(record => {
+                    aggregatedData.博士班.total += record.doctoral;
+                    aggregatedData.碩士班.total += record.master;
+                    aggregatedData.學士班.total += record.bachelor;
+                    aggregatedData.專科.total += record.diploma;
+                    
+                    // 簡化性別分配
+                    const total = record.totalCount;
+                    if (total > 0) {
+                        const maleRatio = record.totalMale / total;
+                        const femaleRatio = record.totalFemale / total;
+                        
+                        aggregatedData.博士班.male += Math.round(record.doctoral * maleRatio);
+                        aggregatedData.博士班.female += Math.round(record.doctoral * femaleRatio);
+                        aggregatedData.碩士班.male += Math.round(record.master * maleRatio);
+                        aggregatedData.碩士班.female += Math.round(record.master * femaleRatio);
+                        aggregatedData.學士班.male += Math.round(record.bachelor * maleRatio);
+                        aggregatedData.學士班.female += Math.round(record.bachelor * femaleRatio);
+                        aggregatedData.專科.male += Math.round(record.diploma * maleRatio);
+                        aggregatedData.專科.female += Math.round(record.diploma * femaleRatio);
+                    }
+                });
+            }
+            
+            return Object.values(aggregatedData)
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 20); // 只顯示前20名
+        }
+
+        // 更新統計摘要
+        function updateStats(data) {
+            const totalStudents = data.reduce((sum, record) => sum + record.totalCount, 0);
+            const totalMale = data.reduce((sum, record) => sum + record.totalMale, 0);
+            const totalFemale = data.reduce((sum, record) => sum + record.totalFemale, 0);
+            const femaleRatio = totalStudents > 0 ? (totalFemale / totalStudents * 100).toFixed(1) : 0;
+            
+            const schools = [...new Set(data.map(d => d.schoolName))].length;
+            const countries = [...new Set(data.map(d => d.country))].length;
+            
+            document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
+            document.getElementById('totalSchools').textContent = schools;
+            document.getElementById('totalCountries').textContent = countries;
+            document.getElementById('femaleRatio').textContent = femaleRatio + '%';
+        }
+
+        // 渲染圖表
+        function renderChart(data, chartType, dataType) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const labels = data.map(item => item.name);
+            const values = data.map(item => {
+                switch(dataType) {
+                    case 'total': return item.total;
+                    case 'doctoral': return item.doctoral;
+                    case 'master': return item.master;
+                    case 'bachelor': return item.bachelor;
+                    case 'diploma': return item.diploma;
+                    default: return item.total;
+                }
+            });
+            
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384',
+                '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+            ];
+            
+            const config = {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: getDataTypeLabel(dataType),
+                        data: values,
+                        backgroundColor: chartType === 'bar' ? '#36A2EB' : colors,
+                        borderColor: chartType === 'bar' ? '#36A2EB' : colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: chartType !== 'bar'
+                        }
+                    },
+                    scales: chartType === 'bar' ? {
+                        y: {
+                            beginAtZero: true
+                        }
+                    } : {},
+                    onClick: (event, elements) => {
+                        // 添加點擊事件處理
+                        if (elements.length > 0 && document.getElementById('viewMode').value === 'school') {
+                            const index = elements[0].index;
+                            const schoolName = labels[index];
+                            showSchoolDetail(schoolName);
+                        }
+                    }
+                }
+            };
+            
+            currentChart = new Chart(ctx, config);
+        }
+        
+        // 顯示學校詳細分析
+        function showSchoolDetail(schoolName) {
+            console.log('顯示學校詳細分析:', schoolName);
+            
+            // 過濾該學校的數據
+            const schoolData = processedData.filter(record => record.schoolName === schoolName);
+            
+            if (schoolData.length === 0) {
+                alert('找不到該學校的數據');
+                return;
+            }
+            
+            // 計算統計數據
+            const totalStudents = schoolData.reduce((sum, record) => sum + record.totalCount, 0);
+            const totalMale = schoolData.reduce((sum, record) => sum + record.totalMale, 0);
+            const totalFemale = schoolData.reduce((sum, record) => sum + record.totalFemale, 0);
+            const countryCount = schoolData.length;
+            
+            const maleRatio = totalStudents > 0 ? (totalMale / totalStudents * 100).toFixed(1) : 0;
+            const femaleRatio = totalStudents > 0 ? (totalFemale / totalStudents * 100).toFixed(1) : 0;
+            
+            // 更新學校詳細面板
+            document.getElementById('schoolDetailTitle').textContent = `${schoolName} - 外籍學生分析`;
+            document.getElementById('schoolTotalStudents').textContent = totalStudents.toLocaleString();
+            document.getElementById('schoolCountryCount').textContent = countryCount;
+            document.getElementById('schoolMaleRatio').textContent = maleRatio + '%';
+            document.getElementById('schoolFemaleRatio').textContent = femaleRatio + '%';
+            
+            // 準備國家分布數據
+            const countryData = schoolData
+                .sort((a, b) => b.totalCount - a.totalCount)
+                .slice(0, 10); // 只顯示前10名
+            
+            // 渲染國家分布圖表
+            renderSchoolCountryChart(countryData);
+            
+            // 計算學位分布數據
+            const degreeData = [
+                { name: '博士班', value: schoolData.reduce((sum, record) => sum + record.doctoral, 0) },
+                { name: '碩士班', value: schoolData.reduce((sum, record) => sum + record.master, 0) },
+                { name: '學士班', value: schoolData.reduce((sum, record) => sum + record.bachelor, 0) },
+                { name: '專科', value: schoolData.reduce((sum, record) => sum + record.diploma, 0) }
+            ].filter(item => item.value > 0);
+            
+            // 渲染學位分布圖表
+            renderSchoolDegreeChart(degreeData);
+            
+            // 更新詳細數據表
+            updateSchoolDetailTable(schoolData);
+            
+            // 顯示面板
+            document.getElementById('schoolDetailPanel').style.display = 'block';
+            
+            // 滾動到詳細面板
+            document.getElementById('schoolDetailPanel').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+        
+        // 渲染學校國家分布圖表
+        function renderSchoolCountryChart(data) {
+            const ctx = document.getElementById('schoolCountryChart').getContext('2d');
+            
+            if (schoolCountryChart) {
+                schoolCountryChart.destroy();
+            }
+            
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                '#FF9F40', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'
+            ];
+            
+            schoolCountryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.country),
+                    datasets: [{
+                        data: data.map(item => item.totalCount),
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed}人 (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 渲染學校學位分布圖表
+        function renderSchoolDegreeChart(data) {
+            const ctx = document.getElementById('schoolDegreeChart').getContext('2d');
+            
+            if (schoolDegreeChart) {
+                schoolDegreeChart.destroy();
+            }
+            
+            const colors = ['#E74C3C', '#3498DB', '#F39C12', '#27AE60'];
+            
+            schoolDegreeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(item => item.name),
+                    datasets: [{
+                        label: '學生人數',
+                        data: data.map(item => item.value),
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新學校詳細數據表
+        function updateSchoolDetailTable(data) {
+            const tableBody = document.getElementById('schoolDetailTableBody');
+            tableBody.innerHTML = '';
+            
+            // 按總人數排序
+            const sortedData = data.sort((a, b) => b.totalCount - a.totalCount);
+            
+            sortedData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.style.backgroundColor = index % 2 === 0 ? '#f2f2f2' : 'white';
+                row.innerHTML = `
+                    <td style="padding: 12px; font-weight: 500;">${item.country}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: bold; color: #2c3e50;">${item.totalCount.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; color: #3498db;">${item.totalMale.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; color: #e91e63;">${item.totalFemale.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; color: #e74c3c;">${item.doctoral.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; color: #3498db;">${item.master.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; color: #f39c12;">${item.bachelor.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; color: #27ae60;">${item.diploma.toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 關閉學校詳細分析
+        function closeSchoolDetail() {
+            document.getElementById('schoolDetailPanel').style.display = 'none';
+            
+            // 清理圖表
+            if (schoolCountryChart) {
+                schoolCountryChart.destroy();
+                schoolCountryChart = null;
+            }
+            if (schoolDegreeChart) {
+                schoolDegreeChart.destroy();
+                schoolDegreeChart = null;
+            }
+        }
+
+        // 獲取數據類型標籤
+        function getDataTypeLabel(dataType) {
+            const labels = {
+                total: '總人數',
+                doctoral: '博士班',
+                master: '碩士班',
+                bachelor: '學士班',
+                diploma: '專科'
+            };
+            return labels[dataType] || '總人數';
+        }
+
+        // 更新表格
+        function updateTable(data, viewMode) {
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
+            
+            // 設置表頭
+            const headerLabels = {
+                school: '學校',
+                country: '國家',
+                degree: '學位別'
+            };
+            
+            tableHeader.innerHTML = `
+                <th>${headerLabels[viewMode]}</th>
+                <th class="numeric">總計</th>
+                <th class="numeric">男性</th>
+                <th class="numeric">女性</th>
+                <th class="numeric">博士班</th>
+                <th class="numeric">碩士班</th>
+                <th class="numeric">學士班</th>
+                <th class="numeric">專科</th>
+            `;
+            
+            // 設置表格內容
+            tableBody.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td class="numeric">${item.total.toLocaleString()}</td>
+                    <td class="numeric">${item.male.toLocaleString()}</td>
+                    <td class="numeric">${item.female.toLocaleString()}</td>
+                    <td class="numeric">${item.doctoral.toLocaleString()}</td>
+                    <td class="numeric">${item.master.toLocaleString()}</td>
+                    <td class="numeric">${item.bachelor.toLocaleString()}</td>
+                    <td class="numeric">${item.diploma.toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // 頁面載入時不自動載入數據，改為顯示上傳介面
+        // window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>
