@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>113學年度各大專校院外籍學生比例分析</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            font-size: 2.2em;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .summary-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .summary-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .export-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .export-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 10px;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        .export-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .sort-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .sort-btn:hover, .sort-btn.active {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            transform: translateY(-2px);
+        }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%);
+            transition: all 0.3s;
+        }
+        .rank {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .school-name {
+            text-align: left;
+            font-weight: 500;
+            color: #2c3e50;
+            max-width: 200px;
+        }
+        .percentage {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .high-percentage {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        .medium-percentage {
+            color: #f39c12;
+            background: rgba(243, 156, 18, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        .low-percentage {
+            color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        .student-count {
+            color: #3498db;
+            font-weight: 500;
+        }
+        .analysis-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+        }
+        .analysis-title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .insight-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .insight-title {
+            color: #3498db;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>113學年度各大專校院外籍學生比例分析</h1>
+        
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span class="summary-number" id="totalSchools">133</span>
+                <span class="summary-label">統計學校數</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number" id="totalForeignStudents">77,531</span>
+                <span class="summary-label">外籍學生總數</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number" id="totalStudents">1,055,580</span>
+                <span class="summary-label">總學生人數</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number" id="overallPercentage">7.34%</span>
+                <span class="summary-label">整體外籍學生比例</span>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <button class="export-btn" onclick="exportToExcel()">📊 匯出Excel檔案</button>
+            <button class="export-btn" onclick="exportToCSV()">📄 匯出CSV檔案</button>
+        </div>
+
+        <div class="controls">
+            <button class="sort-btn active" onclick="sortByPercentage()">按比例排序</button>
+            <button class="sort-btn" onclick="sortByForeignNumber()">按外籍學生人數排序</button>
+            <button class="sort-btn" onclick="sortByTotalNumber()">按總學生數排序</button>
+            <button class="sort-btn" onclick="sortByName()">按學校名稱排序</button>
+        </div>
+
+        <div class="table-container">
+            <table id="analysisTable">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>學校名稱</th>
+                        <th>外籍學生比例</th>
+                        <th>外籍學生人數</th>
+                        <th>總學生人數</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="5" class="loading">正在載入資料...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="analysis-section">
+            <div class="analysis-title">數據洞察</div>
+            <div class="insight-grid">
+                <div class="insight-card">
+                    <div class="insight-title">高比例學校特徵</div>
+                    <div>外籍學生比例超過20%的學校多為技職院校，顯示技職教育對國際學生的吸引力。排名前五的學校比例都超過25%。</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-title">規模與國際化</div>
+                    <div>大型綜合大學如台大、成大雖然外籍學生人數眾多，但因總學生數龐大，比例相對較低，約在8-10%之間。</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-title">技職教育優勢</div>
+                    <div>許多科技大學和技術學院在外籍學生比例上表現突出，反映台灣技職教育在國際上的競爭力。</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-title">整體趨勢</div>
+                    <div>全台平均外籍學生比例為7.34%，顯示台灣高等教育國際化程度持續提升，吸引越來越多國際學生來台就學。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 外籍學生分析資料
+        const foreignStudentData = [
+            {rank: 1, name: "敏實科技大學", percentage: 48.09, foreignStudents: 515, totalStudents: 1071},
+            {rank: 2, name: "台鋼科技大學", percentage: 41.53, foreignStudents: 515, totalStudents: 1240},
+            {rank: 3, name: "東南科技大學", percentage: 38.72, foreignStudents: 1377, totalStudents: 3556},
+            {rank: 4, name: "開南大學", percentage: 27.34, foreignStudents: 1286, totalStudents: 4703},
+            {rank: 5, name: "南開科技大學", percentage: 26.25, foreignStudents: 640, totalStudents: 2438},
+            {rank: 6, name: "育達科技大學", percentage: 25.78, foreignStudents: 873, totalStudents: 3386},
+            {rank: 7, name: "黎明技術學院", percentage: 25.45, foreignStudents: 1253, totalStudents: 4924},
+            {rank: 8, name: "醒吾科技大學", percentage: 23.30, foreignStudents: 1313, totalStudents: 5634},
+            {rank: 9, name: "崑山科技大學", percentage: 22.90, foreignStudents: 1872, totalStudents: 8173},
+            {rank: 10, name: "龍華科技大學", percentage: 22.88, foreignStudents: 2595, totalStudents: 11340},
+            {rank: 11, name: "明新科技大學", percentage: 22.05, foreignStudents: 2185, totalStudents: 9909},
+            {rank: 12, name: "吳鳳科技大學", percentage: 21.10, foreignStudents: 830, totalStudents: 3933},
+            {rank: 13, name: "德育護理健康學院", percentage: 20.68, foreignStudents: 655, totalStudents: 3167},
+            {rank: 14, name: "臺北城市科技大學", percentage: 20.39, foreignStudents: 1790, totalStudents: 8778},
+            {rank: 15, name: "景文科技大學", percentage: 19.98, foreignStudents: 870, totalStudents: 4354},
+            {rank: 16, name: "德明財經科技大學", percentage: 19.54, foreignStudents: 994, totalStudents: 5086},
+            {rank: 17, name: "宏國德霖科技大學", percentage: 18.73, foreignStudents: 804, totalStudents: 4292},
+            {rank: 18, name: "修平科技大學", percentage: 18.02, foreignStudents: 605, totalStudents: 3358},
+            {rank: 19, name: "法鼓文理學院", percentage: 17.95, foreignStudents: 70, totalStudents: 390},
+            {rank: 20, name: "聖約翰科技大學", percentage: 16.92, foreignStudents: 79, totalStudents: 467},
+            {rank: 21, name: "萬能科技大學", percentage: 15.84, foreignStudents: 1248, totalStudents: 7881},
+            {rank: 22, name: "健行科技大學", percentage: 14.73, foreignStudents: 1293, totalStudents: 8777},
+            {rank: 23, name: "元培醫事科技大學", percentage: 14.17, foreignStudents: 506, totalStudents: 3571},
+            {rank: 24, name: "建國科技大學", percentage: 12.95, foreignStudents: 453, totalStudents: 3497},
+            {rank: 25, name: "義守大學", percentage: 12.70, foreignStudents: 1388, totalStudents: 10932},
+            {rank: 26, name: "朝陽科技大學", percentage: 12.25, foreignStudents: 1091, totalStudents: 8954},
+            {rank: 27, name: "中華科技大學", percentage: 12.01, foreignStudents: 344, totalStudents: 2866},
+            {rank: 28, name: "國立臺灣科技大學", percentage: 11.16, foreignStudents: 1322, totalStudents: 11849},
+            {rank: 29, name: "臺北醫學大學", percentage: 11.15, foreignStudents: 692, totalStudents: 6204},
+            {rank: 30, name: "國立暨南國際大學", percentage: 8.80, foreignStudents: 584, totalStudents: 6635},
+            {rank: 31, name: "國立政治大學", percentage: 8.79, foreignStudents: 1485, totalStudents: 16899},
+            {rank: 32, name: "國立東華大學", percentage: 9.64, foreignStudents: 989, totalStudents: 10266},
+            {rank: 33, name: "國立清華大學", percentage: 9.62, foreignStudents: 1757, totalStudents: 18269},
+            {rank: 34, name: "國立臺灣大學", percentage: 9.76, foreignStudents: 3365, totalStudents: 34487},
+            {rank: 35, name: "國立臺灣師範大學", percentage: 10.36, foreignStudents: 1722, totalStudents: 16624},
+            {rank: 36, name: "元智大學", percentage: 9.81, foreignStudents: 894, totalStudents: 9114},
+            {rank: 37, name: "正修科技大學", percentage: 9.36, foreignStudents: 1401, totalStudents: 14957},
+            {rank: 38, name: "國立成功大學", percentage: 8.29, foreignStudents: 1939, totalStudents: 23381},
+            {rank: 39, name: "中原大學", percentage: 5.90, foreignStudents: 974, totalStudents: 16510},
+            {rank: 40, name: "淡江大學", percentage: 6.37, foreignStudents: 1418, totalStudents: 22276},
+            {rank: 41, name: "實踐大學", percentage: 6.46, foreignStudents: 666, totalStudents: 10305},
+            {rank: 42, name: "銘傳大學", percentage: 12.27, foreignStudents: 2121, totalStudents: 17287},
+            {rank: 43, name: "輔仁大學", percentage: 3.76, foreignStudents: 966, totalStudents: 25681},
+            {rank: 44, name: "國立陽明交通大學", percentage: 5.52, foreignStudents: 1222, totalStudents: 22117},
+            {rank: 45, name: "逢甲大學", percentage: 3.88, foreignStudents: 833, totalStudents: 21462},
+            {rank: 46, name: "靜宜大學", percentage: 7.40, foreignStudents: 786, totalStudents: 10630},
+            {rank: 47, name: "東海大學", percentage: 5.84, foreignStudents: 911, totalStudents: 15586},
+            {rank: 48, name: "中國文化大學", percentage: 5.09, foreignStudents: 912, totalStudents: 17904},
+            {rank: 49, name: "東吳大學", percentage: 2.57, foreignStudents: 384, totalStudents: 14958},
+            {rank: 50, name: "國立中興大學", percentage: 4.94, foreignStudents: 783, totalStudents: 15845},
+            {rank: 51, name: "長庚大學", percentage: 6.81, foreignStudents: 493, totalStudents: 7241},
+            {rank: 52, name: "國立中央大學", percentage: 4.56, foreignStudents: 573, totalStudents: 12563},
+            {rank: 53, name: "國立中山大學", percentage: 6.90, foreignStudents: 756, totalStudents: 10948},
+            {rank: 54, name: "國立臺北科技大學", percentage: 7.32, foreignStudents: 988, totalStudents: 13493},
+            {rank: 55, name: "國立臺灣海洋大學", percentage: 7.21, foreignStudents: 656, totalStudents: 9102},
+            {rank: 56, name: "中華大學", percentage: 16.31, foreignStudents: 580, totalStudents: 3557},
+            {rank: 57, name: "大葉大學", percentage: 6.19, foreignStudents: 227, totalStudents: 3666},
+            {rank: 58, name: "世新大學", percentage: 4.24, foreignStudents: 468, totalStudents: 11028},
+            {rank: 59, name: "高雄醫學大學", percentage: 4.68, foreignStudents: 312, totalStudents: 6667},
+            {rank: 60, name: "中國醫藥大學", percentage: 7.81, foreignStudents: 585, totalStudents: 7492},
+            {rank: 61, name: "南臺科技大學", percentage: 3.29, foreignStudents: 477, totalStudents: 14507},
+            {rank: 62, name: "樹德科技大學", percentage: 11.36, foreignStudents: 934, totalStudents: 8226},
+            {rank: 63, name: "慈濟大學", percentage: 7.34, foreignStudents: 388, totalStudents: 5285},
+            {rank: 64, name: "中山醫學大學", percentage: 2.78, foreignStudents: 199, totalStudents: 7157},
+            {rank: 65, name: "輔英科技大學", percentage: 5.94, foreignStudents: 492, totalStudents: 8280},
+            {rank: 66, name: "長榮大學", percentage: 4.91, foreignStudents: 234, totalStudents: 4769},
+            {rank: 67, name: "弘光科技大學", percentage: 5.17, foreignStudents: 585, totalStudents: 11320},
+            {rank: 68, name: "嘉南藥理大學", percentage: 6.84, foreignStudents: 609, totalStudents: 8910},
+            {rank: 69, name: "玄奘大學", percentage: 16.66, foreignStudents: 231, totalStudents: 1387},
+            {rank: 70, name: "明志科技大學", percentage: 5.20, foreignStudents: 228, totalStudents: 4383},
+            {rank: 71, name: "大仁科技大學", percentage: 4.20, foreignStudents: 160, totalStudents: 3809},
+            {rank: 72, name: "嶺東科技大學", percentage: 1.89, foreignStudents: 158, totalStudents: 8355},
+            {rank: 73, name: "中國科技大學", percentage: 8.69, foreignStudents: 483, totalStudents: 5561},
+            {rank: 74, name: "中臺科技大學", percentage: 1.38, foreignStudents: 84, totalStudents: 6102},
+            {rank: 75, name: "亞洲大學", percentage: 4.70, foreignStudents: 506, totalStudents: 10776},
+            {rank: 76, name: "佛光大學", percentage: 6.53, foreignStudents: 165, totalStudents: 2525},
+            {rank: 77, name: "台南應用科技大學", percentage: 1.74, foreignStudents: 158, totalStudents: 9088},
+            {rank: 78, name: "中信科技大學", percentage: 5.81, foreignStudents: 103, totalStudents: 1774},
+            {rank: 79, name: "中華醫事科技大學", percentage: 1.32, foreignStudents: 92, totalStudents: 6968},
+            {rank: 80, name: "僑光科技大學", percentage: 4.94, foreignStudents: 395, totalStudents: 7995},
+            {rank: 81, name: "美和科技大學", percentage: 2.06, foreignStudents: 92, totalStudents: 4460},
+            {rank: 82, name: "長庚科技大學", percentage: 0.45, foreignStudents: 27, totalStudents: 5988},
+            {rank: 83, name: "文藻外語大學", percentage: 4.57, foreignStudents: 313, totalStudents: 6849},
+            {rank: 84, name: "華夏科技大學", percentage: 8.64, foreignStudents: 71, totalStudents: 822},
+            {rank: 85, name: "致理科技大學", percentage: 3.44, foreignStudents: 374, totalStudents: 10857},
+            {rank: 86, name: "康寧大學", percentage: 0.09, foreignStudents: 3, totalStudents: 3239},
+            {rank: 87, name: "崇右影藝科技大學", percentage: 5.12, foreignStudents: 57, totalStudents: 1114},
+            {rank: 88, name: "台北海洋科技大學", percentage: 5.94, foreignStudents: 215, totalStudents: 3621},
+            {rank: 89, name: "亞東科技大學", percentage: 7.14, foreignStudents: 282, totalStudents: 3950},
+            {rank: 90, name: "中信金融管理學院", percentage: 2.94, foreignStudents: 27, totalStudents: 917},
+            {rank: 91, name: "南亞技術學院", percentage: 0.38, foreignStudents: 7, totalStudents: 1824},
+            {rank: 92, name: "馬偕醫學院", percentage: 1.52, foreignStudents: 15, totalStudents: 986},
+            {rank: 93, name: "馬偕醫護管理專科學校", percentage: 0.07, foreignStudents: 3, totalStudents: 4046},
+            {rank: 94, name: "樹人醫護管理專科學校", percentage: 0.03, foreignStudents: 2, totalStudents: 7213},
+            {rank: 95, name: "耕莘健康管理專科學校", percentage: 0.08, foreignStudents: 3, totalStudents: 3931},
+            {rank: 96, name: "敏惠醫護管理專科學校", percentage: 0.03, foreignStudents: 1, totalStudents: 3306},
+            {rank: 97, name: "聖母醫護管理專科學校", percentage: 0.42, foreignStudents: 6, totalStudents: 1416},
+            {rank: 98, name: "臺北市立大學", percentage: 2.05, foreignStudents: 166, totalStudents: 8099},
+            {rank: 99, name: "國立中正大學", percentage: 3.55, foreignStudents: 410, totalStudents: 11553},
+            {rank: 100, name: "國立高雄師範大學", percentage: 2.35, foreignStudents: 171, totalStudents: 7262},
+            {rank: 101, name: "國立彰化師範大學", percentage: 3.98, foreignStudents: 343, totalStudents: 8624},
+            {rank: 102, name: "國立臺北大學", percentage: 5.81, foreignStudents: 589, totalStudents: 10142},
+            {rank: 103, name: "國立嘉義大學", percentage: 2.53, foreignStudents: 287, totalStudents: 11349},
+            {rank: 104, name: "國立高雄大學", percentage: 4.47, foreignStudents: 277, totalStudents: 6192},
+            {rank: 105, name: "國立雲林科技大學", percentage: 3.58, foreignStudents: 375, totalStudents: 10470},
+            {rank: 106, name: "國立屏東科技大學", percentage: 4.33, foreignStudents: 433, totalStudents: 10003},
+            {rank: 107, name: "國立臺北藝術大學", percentage: 7.03, foreignStudents: 226, totalStudents: 3213},
+            {rank: 108, name: "國立臺灣藝術大學", percentage: 5.76, foreignStudents: 319, totalStudents: 5539},
+            {rank: 109, name: "國立臺東大學", percentage: 0.95, foreignStudents: 48, totalStudents: 5048},
+            {rank: 110, name: "國立宜蘭大學", percentage: 1.76, foreignStudents: 96, totalStudents: 5447},
+            {rank: 111, name: "國立聯合大學", percentage: 0.95, foreignStudents: 72, totalStudents: 7594},
+            {rank: 112, name: "國立虎尾科技大學", percentage: 1.03, foreignStudents: 123, totalStudents: 11975},
+            {rank: 113, name: "國立臺南藝術大學", percentage: 4.45, foreignStudents: 71, totalStudents: 1596},
+            {rank: 114, name: "國立臺南大學", percentage: 2.25, foreignStudents: 134, totalStudents: 5966},
+            {rank: 115, name: "國立臺北教育大學", percentage: 3.68, foreignStudents: 222, totalStudents: 6039},
+            {rank: 116, name: "國立臺中教育大學", percentage: 4.02, foreignStudents: 206, totalStudents: 5130},
+            {rank: 117, name: "國立澎湖科技大學", percentage: 0.21, foreignStudents: 5, totalStudents: 2388},
+            {rank: 118, name: "國立勤益科技大學", percentage: 7.43, foreignStudents: 929, totalStudents: 12510},
+            {rank: 119, name: "國立體育大學", percentage: 2.52, foreignStudents: 70, totalStudents: 2782},
+            {rank: 120, name: "國立臺北護理健康大學", percentage: 2.67, foreignStudents: 139, totalStudents: 5201},
+            {rank: 121, name: "國立高雄餐旅大學", percentage: 7.80, foreignStudents: 320, totalStudents: 4101},
+            {rank: 122, name: "國立金門大學", percentage: 6.25, foreignStudents: 239, totalStudents: 3823},
+            {rank: 123, name: "國立臺灣體育運動大學", percentage: 3.04, foreignStudents: 94, totalStudents: 3090},
+            {rank: 124, name: "國立臺中科技大學", percentage: 1.81, foreignStudents: 286, totalStudents: 15762},
+            {rank: 125, name: "國立臺北商業大學", percentage: 2.98, foreignStudents: 207, totalStudents: 6948},
+            {rank: 126, name: "國立屏東大學", percentage: 1.40, foreignStudents: 122, totalStudents: 8740},
+            {rank: 127, name: "國立高雄科技大學", percentage: 1.81, foreignStudents: 495, totalStudents: 27394},
+            {rank: 128, name: "國立臺灣戲曲學院", percentage: 1.11, foreignStudents: 5, totalStudents: 449},
+            {rank: 129, name: "國立臺南護理專科學校", percentage: 0.20, foreignStudents: 4, totalStudents: 1992},
+            {rank: 130, name: "真理大學", percentage: 14.39, foreignStudents: 334, totalStudents: 2322},
+            {rank: 131, name: "大同大學", percentage: 2.44, foreignStudents: 85, totalStudents: 3490},
+            {rank: 132, name: "南華大學", percentage: 3.54, foreignStudents: 166, totalStudents: 4690},
+            {rank: 133, name: "華梵大學", percentage: 7.15, foreignStudents: 76, totalStudents: 1063}
+        ];
+
+        let currentSortType = 'percentage';
+
+        // 格式化數字
+        function formatNumber(num) {
+            return num.toLocaleString('zh-TW');
+        }
+
+        // 獲取百分比顏色類別
+        function getPercentageClass(percentage) {
+            if (percentage >= 15) return 'high-percentage';
+            if (percentage >= 8) return 'medium-percentage';
+            return 'low-percentage';
+        }
+
+        // 載入表格資料
+        function loadTableData(data = foreignStudentData) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            data.forEach((school, index) => {
+                const row = document.createElement('tr');
+                const percentageClass = getPercentageClass(school.percentage);
+
+                row.innerHTML = `
+                    <td class="rank">${currentSortType === 'percentage' ? school.rank : index + 1}</td>
+                    <td class="school-name">${school.name}</td>
+                    <td class="percentage ${percentageClass}">${school.percentage.toFixed(2)}%</td>
+                    <td class="student-count">${formatNumber(school.foreignStudents)}</td>
+                    <td class="student-count">${formatNumber(school.totalStudents)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 排序函數
+        function sortByPercentage() {
+            const sorted = [...foreignStudentData].sort((a, b) => b.percentage - a.percentage);
+            loadTableData(sorted);
+            updateActiveButton('sortByPercentage');
+            currentSortType = 'percentage';
+        }
+
+        function sortByForeignNumber() {
+            const sorted = [...foreignStudentData].sort((a, b) => b.foreignStudents - a.foreignStudents);
+            loadTableData(sorted);
+            updateActiveButton('sortByForeignNumber');
+            currentSortType = 'foreignNumber';
+        }
+
+        function sortByTotalNumber() {
+            const sorted = [...foreignStudentData].sort((a, b) => b.totalStudents - a.totalStudents);
+            loadTableData(sorted);
+            updateActiveButton('sortByTotalNumber');
+            currentSortType = 'totalNumber';
+        }
+
+        function sortByName() {
+            const sorted = [...foreignStudentData].sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+            loadTableData(sorted);
+            updateActiveButton('sortByName');
+            currentSortType = 'name';
+        }
+
+        function updateActiveButton(activeFunction) {
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // 匯出Excel
+        function exportToExcel() {
+            const worksheet = XLSX.utils.json_to_sheet(
+                foreignStudentData.map(school => ({
+                    '排名': school.rank,
+                    '學校名稱': school.name,
+                    '外籍學生比例(%)': school.percentage.toFixed(2),
+                    '外籍學生人數': school.foreignStudents,
+                    '總學生人數': school.totalStudents
+                }))
+            );
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, '外籍學生比例統計');
+
+            // 設定欄位寬度
+            worksheet['!cols'] = [
+                { width: 8 },   // 排名
+                { width: 30 },  // 學校名稱
+                { width: 18 },  // 外籍學生比例
+                { width: 15 },  // 外籍學生人數
+                { width: 15 }   // 總學生人數
+            ];
+
+            XLSX.writeFile(workbook, '113學年度各大專校院外籍學生比例統計.xlsx');
+        }
+
+        // 匯出CSV
+        function exportToCSV() {
+            const csvContent = [
+                ['排名', '學校名稱', '外籍學生比例(%)', '外籍學生人數', '總學生人數'],
+                ...foreignStudentData.map(school => [
+                    school.rank,
+                    school.name,
+                    school.percentage.toFixed(2),
+                    school.foreignStudents,
+                    school.totalStudents
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '113學年度各大專校院外籍學生比例統計.csv';
+            link.click();
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTableData();
+        });
+    </script>
+</body>
+</html>
